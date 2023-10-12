@@ -3,10 +3,13 @@ title: "week_8_exercises_data"
 author: "J.Blondeau"
 date: "2023-10-07"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
 This week you will use ggplot2 to explore fish datasets.  You will be looking for outliers and examining the distributions of density in different habitat types.  
@@ -19,15 +22,41 @@ Inspect the fish_psu_density.csv dataset.  These data are density of 5 individua
 1. Create box and whisker plots, grouped by YEAR, REGION, STRAT and SPECIES_CD, of each species' density.  
     - Use both fish_psu_density.csv & fish_psu_density_w_outliers.csv.  They are identical except for a few outliers in the data.
     
+```{r}
+fishplot <- fish_psu_density %>% group_by(YEAR, REGION, STRAT, SPECIES_CD) %>% summarise(mean_den = mean(density), sd = sd(density)) %>% ggplot(aes(SPECIES_CD, mean_den)) + geom_boxplot(mapping = NULL, data = NULL, stat = "boxplot", position = "dodge2")
+fishplot
+
+fishplotout <- fish_psu_density_with_outliers %>% group_by(YEAR, REGION, STRAT, SPECIES_CD) %>% summarise(mean_den = mean(density), sd = sd(density)) %>% ggplot(aes(SPECIES_CD, mean_den)) + geom_boxplot(mapping = NULL, data = NULL, stat = "boxplot", position = "dodge2")
+fishplotout
+```
+    
 2. Create another set of box and whisker plots like #1 except split the box plots by REGION (all the species in NCRMP and all the species in DCRMP, separately).  Hint: Faceting
+
+```{r}
+fishplotface <- fish_psu_density %>% group_by(YEAR, REGION, STRAT, SPECIES_CD) %>% summarise(mean_den = mean(density), sd = sd(density)) %>% ggplot(aes(SPECIES_CD, mean_den)) + geom_boxplot(outlier.colour = "blue", outlier.shape = 9, outlier.size = 4) + facet_wrap(~REGION, scale = "free_y")
+fishplotface
+
+fishplotfaceout <- fish_psu_density_with_outliers %>% group_by(YEAR, REGION, STRAT, SPECIES_CD) %>% summarise(mean_den = mean(density), sd = sd(density)) %>% ggplot(aes(SPECIES_CD, mean_den)) + geom_boxplot(outlier.colour = "blue", outlier.shape = 9, outlier.size = 4) + facet_wrap(~REGION, scale = "free_y")
+fishplotfaceout
+```
 
 
 ### Part 2 Scatter Plots
 
 3. Create a scatter plot of STRAT-level mean density vs. standard deviation.  Each point on the plot will represent a single species mean density vs sd in every STRAT.  For this plot you can aggregate all the years together to get a better understanding of STRAT-level variance.
     - How would you interpret this plot?
+  
+```{r}
+fishyscat <- fish_psu_density %>% group_by(STRAT, REGION, SPECIES_CD) %>% summarise(mean_den = mean(density), sd = sd(density)) %>% ggplot(aes(mean_den, sd)) + geom_point(aes(shape = REGION)) + aes(color = REGION)
+fishyscat
+```
 
 4. Create another scatter plot like #3 using the fish_psu_density_w_outliers dataset to see how outliers affect the plots.
+
+```{r}
+fishysout <- fish_psu_density_with_outliers %>% group_by(STRAT, REGION, SPECIES_CD) %>% summarise(mean_den = mean(density), sd = sd(density)) %>% ggplot(aes(mean_den, sd)) + geom_point(aes(shape = REGION)) + aes(color = REGION)
+fishysout
+```
 
 ### Part 3 Histograms
 
@@ -35,7 +64,23 @@ Inspect the length_frequency.csv dataset.  This data represents two fish's relat
 
 5.  Using the length_frequency.csv, create a length frequency histogram (in 1cm size bins).  Both species should be on the same plot so you can compare their relative population size compositions.  Hint:  You will likely need to pivot the data first.
 
+```{r}
+pfishlong <- length_frequency %>% pivot_longer(cols = `red hind`:`french grunt`, names_to = "Species", values_to = "length")
+View(pfishlong)
+
+fishlongplot <- ggplot(pfishlong, aes(bin, length, fill = Species)) + geom_bar(stat = "identity", position = "dodge", linewidth = .25, color = "black")
+fishlongplot
+```
+
 Lastly, the usvi_2021_raw.csv dataset represents raw counts that divers observed in their sample.  One way to check for errors in a dataset like this is to plot a histogram of the raw numbers to visually check if something looks off.  
 
 6. Create a histogram for each species present in the dataset showing the distribution of NUMBER_OF_INDIVIDUALS.  Hint: For Loops
 
+```{r}
+spp <- unique(usvi_2021_fish_raw$SPECIES_CD)
+
+for (s in spp) {print(s)}
+
+for (s in spp) {p <- usvi_2021_fish_raw %>% filter(SPECIES_CD == s) %>% ggplot(aes(x = NUMBER_OF_INDIVIDUALS)) + geom_bar(color = "black", fill = "white") + labs(title = s)}
+p
+```
